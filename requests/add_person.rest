@@ -1,0 +1,9 @@
+POST http://localhost:3003/api/blogs
+Content-Type: application/json
+
+{
+    "title": "The Trouble with Tribbles",
+    "author": "Joe Tribbles",
+    "url": "https://www.tribbles.com"
+}
+

@@ -1,0 +1,9 @@
+PUT http://localhost:3003/api/blogs/6275926f0bb28073506433f3
+Content-Type: application/json
+
+{
+    "title": "More Tribbles",
+    "author": "Wilbur G. George",
+    "url": "https://tribbles.google.com/",
+    "likes": 213
+}
