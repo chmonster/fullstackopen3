@@ -1,5 +1,10 @@
 
-const Blog = require ('../models/blog')
+const Blog = require('../models/blog')
+const mongoose = require('mongoose')
+
+const nonExistingID = () => {
+  return new mongoose.Types.ObjectId()
+}
 
 const initialBlogs = [
   {
@@ -47,7 +52,7 @@ const initialBlogs = [
     title: 'Type wars',
     author: 'Robert C. Martin',
     url: 'http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html',
-    //likes: 2,
+    likes: 2,
     //__v: 0
   }
 ]
@@ -59,11 +64,40 @@ const newBlog = {
   likes: 2345
 }
 
+const newBlogNoUrlNoTitle = {
+  //title: 'Wilbur Jethro George is the Devil',
+  author: 'Wilbur Q. George',
+  //url: 'https://wilburjethrogeorge.com/',
+  likes: 666
+}
+
+const newBlogNoTitle = {
+  //title: 'Wilbur Jethro George is the Devil',
+  author: 'Wilbur Q. George',
+  url: 'https://wilburjethrogeorge.com/',
+  likes: 666
+}
+
 const newBlogNoUrl = {
   title: 'Wilbur Jethro George is the Devil',
   author: 'Wilbur Q. George',
   //url: 'https://wilburjethrogeorge.com/',
   likes: 666
+}
+
+const newBlogNoAuthor = {
+  title: 'Wilbur Jethro George is the Devil',
+  //author: 'Wilbur Q. George',
+  url: 'https://wilburjethrogeorge.com/',
+  likes: 666
+}
+
+
+const newBlogNoLikes = {
+  title: 'Wilbur Q. George is the Devil',
+  author: 'Wilbur J. George',
+  url: 'https://wilburjethrogeorge.com/'
+  //likes: 666
 }
 
 const blogsInDb = async () => {
@@ -72,5 +106,6 @@ const blogsInDb = async () => {
 }
 
 module.exports = {
-  initialBlogs, newBlog, newBlogNoUrl, blogsInDb
+  initialBlogs, newBlog, newBlogNoUrl, newBlogNoTitle, newBlogNoAuthor,
+  newBlogNoUrlNoTitle, newBlogNoLikes, blogsInDb, nonExistingID
 }
