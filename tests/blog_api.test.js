@@ -2,20 +2,29 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
+require('dotenv').config()
 
-const Blog = require ('../models/blog')
+const Blog = require('../models/blog')
+const User = require('../models/user')
 
-const helper = require('./test_helper')
+const helper = require('./blog_helper')
 
 beforeEach(async () => {
 
-  await Blog.deleteMany({})
+  await User.deleteMany({})
+  await helper.makeTestUser()
+  const testUser = await helper.testUser()
 
+  await Blog.deleteMany({})
+  //console.log('beforeEach', testUser)
   for (let blog of helper.initialBlogs) {
-    let blogObject = new Blog(blog)
+    let blogObject = new Blog({ ...blog, 'user': testUser.id })
+    //console.log(blogObject)
     await blogObject.save()
   }
+
 })
+
 describe('check the entire database', () => {
 
   test('blogs are returned as json', async () => {
@@ -49,8 +58,10 @@ describe('check the entire database', () => {
 })
 
 describe('viewing a specific blog', () => {
+
   test('succeeds with a valid id', async () => {
     const blogsAtStart = await helper.blogsInDb()
+    //console.log(blogsAtStart)
 
     const blogToView = blogsAtStart[0]
 
@@ -60,6 +71,8 @@ describe('viewing a specific blog', () => {
       .expect('Content-Type', /application\/json/)
 
     const processedBlogToView = JSON.parse(JSON.stringify(blogToView))
+    //console.log('processedBlogToView', processedBlogToView)
+    console.log('resultBlog', resultBlog.body)
 
     expect(resultBlog.body).toEqual(processedBlogToView)
   })
@@ -67,7 +80,7 @@ describe('viewing a specific blog', () => {
   test('fails with statuscode 404 if blog does not exist', async () => {
     const validNonexistingId = await helper.nonExistingID()
 
-    console.log(validNonexistingId)
+    //console.log(validNonexistingId)
 
     await api
       .get(`/api/blogs/${validNonexistingId}`)
@@ -81,14 +94,18 @@ describe('viewing a specific blog', () => {
       .get(`/api/blogs/${invalidId}`)
       .expect(400)
   })
+
 })
 
 describe('addition of a new blog', () => {
 
   test('a fully specified blog can be added', async () => {
+    const testUser = await helper.testUser()
+    //console.log(testUser)
     await api
       .post('/api/blogs')
-      .send(helper.newBlog)
+      .set('Authorization', 'bearer '.concat(testUser.token))
+      .send({ ...helper.newBlog, 'user': testUser.id })
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
@@ -99,11 +116,29 @@ describe('addition of a new blog', () => {
     expect(authors).toContain('Wilbur J. George')
   })
 
+  test('blog with short author name is not added', async () => {
+    const testUser = await helper.testUser()
+    //console.log(testUser)
+    const shortAuthor = { ...helper.newBlog, 'author': 'OK', 'user': testUser.id }
+    console.log(shortAuthor)
 
-  test('blog with title or url or author missing is added', async () => {
     await api
       .post('/api/blogs')
-      .send(helper.newBlogNoUrl)
+      .set('Authorization', 'bearer '.concat(testUser.token))
+      .send(shortAuthor)
+      .expect(400)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+  })
+
+
+  test('blog with one of title or url or author missing is added', async () => {
+    const testUser = await helper.testUser()
+    await api
+      .post('/api/blogs')
+      .set('Authorization', 'bearer '.concat(testUser.token))
+      .send({ ...helper.newBlogNoUrl, 'user': testUser.id })
       .expect(201)
 
     const blogsAtEnd = await helper.blogsInDb()
@@ -112,7 +147,8 @@ describe('addition of a new blog', () => {
 
     await api
       .post('/api/blogs')
-      .send(helper.newBlogNoAuthor)
+      .set('Authorization', 'bearer '.concat(testUser.token))
+      .send({ ...helper.newBlogNoAuthor, 'user': testUser.id })
       .expect(201)
 
     const blogsAtEnd0 = await helper.blogsInDb()
@@ -121,7 +157,8 @@ describe('addition of a new blog', () => {
 
     await api
       .post('/api/blogs')
-      .send(helper.newBlogNoTitle)
+      .set('Authorization', 'bearer '.concat(testUser.token))
+      .send({ ...helper.newBlogNoTitle, 'user': testUser.id })
       .expect(201)
 
     const blogsAtEnd2 = await helper.blogsInDb()
@@ -130,34 +167,24 @@ describe('addition of a new blog', () => {
   })
 
   test('blog without title and url is not added', async () => {
+    const testUser = await helper.testUser()
     await api
       .post('/api/blogs')
-      .send(helper.newBlogNoUrlNoTitle)
+      .set('Authorization', 'bearer '.concat(testUser.token))
+      .send({ ...helper.newBlogNoUrlNoTitle, 'user': testUser.id })
       .expect(400)
 
     const blogsAtEnd = await helper.blogsInDb()
     expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
   })
 
-  test('a specific blog can be viewed', async () => {
-    const blogsAtStart = await helper.blogsInDb()
-
-    const blogToView = blogsAtStart[0]
-
-    const resultBlog = await api
-      .get(`/api/blogs/${blogToView.id}`)
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    const processedBlogToView = JSON.parse(JSON.stringify(blogToView))
-
-    expect(resultBlog.body).toEqual(processedBlogToView)
-  })
 
   test('blog without likes is given likes = 0 by default', async () => {
+    const testUser = await helper.testUser()
     await api
       .post('/api/blogs')
-      .send(helper.newBlogNoLikes)
+      .set('Authorization', 'bearer '.concat(testUser.token))
+      .send({ ...helper.newBlogNoLikes, user: testUser.id })
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
@@ -215,7 +242,6 @@ describe('edit existing database', () => {
   })
 
 })
-
 
 afterAll(() => {
   mongoose.connection.close()
