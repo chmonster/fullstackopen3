@@ -126,5 +126,5 @@ const blogsInDb = async () => {
 module.exports = {
   initialBlogs, newBlog, newBlogNoUrl, newBlogNoTitle, newBlogNoAuthor,
   newBlogNoUrlNoTitle, newBlogNoLikes, blogsInDb, nonExistingID, makeTestUser,
-  testUser
+  testUser, loginUser
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "NODE_ENV=production node index.js",
     "dev": "NODE_ENV=development nodemon index.js",
-    "test": "NODE_ENV=test jest --runInBand --detectOpenHandles",
+    "test": "NODE_ENV=test jest --runInBand --forceExit",
     "lint": "eslint .",
     "build:ui": "rm -rf build && cd ../fullstackopen2/frontend && npm run build && cp -r build ../fullstackopen3",
     "deploy": "git push heroku master",

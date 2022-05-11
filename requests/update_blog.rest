@@ -1,5 +1,6 @@
-PUT http://localhost:3003/api/blogs/6279743ff91c060981c57406
+PUT http://localhost:3003/api/blogs/627bf0583b8aa3f5f0dbc8aa
 Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRyaWJibGUiLCJpZCI6IjYyN2JlZmYyM2I4YWEzZjVmMGRiYzhhMiIsImlhdCI6MTY1MjI4OTc3OH0.0fWYm4qsUGX60mqh2ToBz97KZtDUwsslNL3FhKOTRHc
 
 {
     "title": "More Tribbles",

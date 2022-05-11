@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
+const bcrypt = require('bcrypt')
 require('dotenv').config()
 
 const Blog = require('../models/blog')
@@ -201,11 +202,14 @@ describe('addition of a new blog', () => {
 describe('edit existing database', () => {
 
   test('a blog can be deleted', async () => {
+
+    const testUser = await helper.testUser()
     const blogsAtStart = await helper.blogsInDb()
     const blogToDelete = blogsAtStart[0]
 
     await api
       .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', 'bearer '.concat(testUser.token))
       .expect(204)
 
     const blogsAtEnd = await helper.blogsInDb()
@@ -219,15 +223,73 @@ describe('edit existing database', () => {
     expect(authors).not.toContain(blogToDelete.author)
   })
 
+  test('deleting a blog without a token returns 401', async () => {
+
+    //const testUser = await helper.testUser()
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      //.set('Authorization', 'bearer '.concat(testUser.token))
+      .expect(401)
+
+    const blogsAtEnd = await helper.blogsInDb()
+
+    expect(blogsAtEnd).toHaveLength(
+      helper.initialBlogs.length
+    )
+
+    const authors = blogsAtEnd.map(r => r.author)
+
+    expect(authors).toContain(blogToDelete.author)
+  })
+
+  test('deleting a blog with a different user returns 401', async () => {
+
+    //const testUser = await helper.testUser()
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+    console.log('blogToDelete', blogToDelete)
+
+    const hash = await bcrypt.hash('yummy', 10)
+    const user = new User({
+      username: 'turnip',
+      name: 'Aloysius D. Turnip',
+      blogs: [],
+      passwordHash: hash
+    })
+    await user.save()
+    const wrongUserId = helper.loginUser(user)
+    console.log(wrongUserId)
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', 'bearer '.concat(wrongUserId.token))
+      .expect(401)
+
+    const blogsAtEnd = await helper.blogsInDb()
+
+    expect(blogsAtEnd).toHaveLength(
+      helper.initialBlogs.length
+    )
+
+    const authors = blogsAtEnd.map(r => r.author)
+
+    expect(authors).toContain(blogToDelete.author)
+  })
+
   test('a blog can be updated', async () => {
     const blogsAtStart = await helper.blogsInDb()
     const blogToUpdate = blogsAtStart[0]
+    const testUser = await helper.testUser()
     const blogUpdated = { ...blogToUpdate, likes: blogToUpdate.likes + 1 }
     //console.log(blogUpdated)
 
     await api
       .put(`/api/blogs/${blogToUpdate.id}`)
       .send(blogUpdated)
+      .set('Authorization', 'bearer '.concat(testUser.token))
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
