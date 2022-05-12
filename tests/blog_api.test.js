@@ -133,7 +133,6 @@ describe('addition of a new blog', () => {
     expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
   })
 
-
   test('blog with one of title or url or author missing is added', async () => {
     const testUser = await helper.testUser()
     await api
@@ -178,7 +177,6 @@ describe('addition of a new blog', () => {
     const blogsAtEnd = await helper.blogsInDb()
     expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
   })
-
 
   test('blog without likes is given likes = 0 by default', async () => {
     const testUser = await helper.testUser()
@@ -295,11 +293,59 @@ describe('edit existing database', () => {
 
     const blogsAtEnd = await helper.blogsInDb()
 
-    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+    //expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
     const blogToView = blogsAtEnd[0]
     //console.log(blogToView)
     expect(blogToView.id).toEqual(blogToUpdate.id)
     expect(blogToView.likes).toEqual(blogToUpdate.likes + 1)
+
+  })
+
+  test('updating a blog without a token returns 401', async () => {
+
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToUpdate = blogsAtStart[0]
+    const blogUpdated = { ...blogToUpdate, likes: blogToUpdate.likes + 1 }
+
+    await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(blogUpdated)
+      //.set('Authorization', 'bearer '.concat(testUser.token))
+      .expect(401)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    const blogToView = blogsAtEnd[0]
+    expect(blogToView.id).toEqual(blogToUpdate.id)
+    expect(blogToView.likes).toEqual(blogToUpdate.likes)
+
+  })
+
+  test('updating a blog with a different user returns 401', async () => {
+
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToUpdate = blogsAtStart[0]
+    const blogUpdated = { ...blogToUpdate, likes: blogToUpdate.likes + 1 }
+
+    const hash = await bcrypt.hash('yummy', 10)
+    const user = new User({
+      username: 'turnip',
+      name: 'Aloysius D. Turnip',
+      blogs: [],
+      passwordHash: hash
+    })
+    await user.save()
+    const wrongUserId = helper.loginUser(user)
+    console.log(wrongUserId)
+
+    await api
+      .delete(`/api/blogs/${blogUpdated.id}`)
+      .set('Authorization', 'bearer '.concat(wrongUserId.token))
+      .expect(401)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    const blogToView = blogsAtEnd[0]
+    expect(blogToView.id).toEqual(blogToUpdate.id)
+    expect(blogToView.likes).toEqual(blogToUpdate.likes)
 
   })
 

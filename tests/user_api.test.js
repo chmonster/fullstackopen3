@@ -19,18 +19,6 @@ beforeEach(async () => {
   }
 })
 
-/*beforeEach(async () => {
-  await User.deleteMany({})
-
-  const passwordHash = await bcrypt.hash('sekret', 10)
-  const user = new User({ username: 'root', passwordHash })
-
-  await user.save()
-})*/
-
-/*describe('when there is initially one user in db', () => {
-
-})*/
 
 describe('adding a user to db', () => {
   // ...
@@ -71,23 +59,56 @@ describe('adding a user to db', () => {
 
   test('creation fails with 400 if username too short', async () => {
     const usersAtStart = await helper.usersInDb()
-    const newUser = { ...usersAtStart[0], username: 'BS' }
-
+    const newUser = { ...helper.newUser, username: 'BS' }
+    console.log(newUser)
     const result = await api
       .post('/api/users')
       .send(newUser)
       .expect(400)
       .expect('Content-Type', /application\/json/)
 
-    expect(result.body.error).toContain('username must be unique')
+    expect(result.body.error).toContain('username too short')
 
     const usersAtEnd = await helper.usersInDb()
     expect(usersAtEnd).toEqual(usersAtStart)
   })
 
+  test('creation fails with 400 if username omitted', async () => {
+    const usersAtStart = await helper.usersInDb()
+    const newUser = helper.newUserNoUsername
+    console.log(newUser)
+    const result = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(result.body.error).toContain('username required')
+
+    const usersAtEnd = await helper.usersInDb()
+    expect(usersAtEnd).toEqual(usersAtStart)
+  })
+
+  test('creation ok if name omitted', async () => {
+    const usersAtStart = await helper.usersInDb()
+    const newUser = helper.newUserNoName
+    console.log(newUser)
+    await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const usersAtEnd = await helper.usersInDb()
+    expect(usersAtEnd).toHaveLength(usersAtStart.length + 1)
+
+    const usernames = usersAtEnd.map(u => u.username)
+    expect(usernames).toContain(newUser.username)
+  })
+
   test('creation fails with 400 if password too short', async () => {
     const usersAtStart = await helper.usersInDb()
-    const newUser = { ...usersAtStart[0], password: 'BS' }
+    const newUser = { ...helper.newUser, password: 'BS' }
 
     const result = await api
       .post('/api/users')
@@ -95,7 +116,23 @@ describe('adding a user to db', () => {
       .expect(400)
       .expect('Content-Type', /application\/json/)
 
-    expect(result.body.error).toContain('username must be unique')
+    expect(result.body.error).toContain('password too short')
+
+    const usersAtEnd = await helper.usersInDb()
+    expect(usersAtEnd).toEqual(usersAtStart)
+  })
+
+  test('creation fails with 400 if password omitted', async () => {
+    const usersAtStart = await helper.usersInDb()
+    const newUser = helper.newUserNoPassword
+
+    const result = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(result.body.error).toContain('password required')
 
     const usersAtEnd = await helper.usersInDb()
     expect(usersAtEnd).toEqual(usersAtStart)
