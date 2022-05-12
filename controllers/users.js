@@ -12,12 +12,6 @@ usersRouter.post('/', async (request, response) => {
     })
   }
 
-  /*if (!username) {
-    return response.status(400).json({
-      error: 'username required'
-    })
-  }*/
-
   if (!password) {
     return response.status(400).json({
       error: 'password required'
