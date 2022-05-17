@@ -38,7 +38,7 @@ blogsRouter.post('/', userExtractor, async (request, response) => {
     author: body.author,
     url: body.url,
     user: user._id,
-    likes: 0
+    likes: body.likes || 0
   })
 
   const savedBlog = await blog.save()
@@ -72,16 +72,17 @@ blogsRouter.delete('/:id', userExtractor, async (request, response) => {
   response.status(204).end()
 })
 
-blogsRouter.put('/:id', userExtractor, async (request, response) => {
+//blogsRouter.put('/:id', userExtractor, async (request, response) => {
+blogsRouter.put('/:id', async (request, response) => {
 
-  if (!request.user) {
+  /*if (!request.user) {
     return response.status(401).json({ error: 'token missing or invalid' })
   }
 
   const user = await User.findById(request.user)
   if(!user) {
     return response.status(401).json({ error: 'user does not exist' })
-  }
+  }*/
 
   const blogToUpdate = await Blog.findById(request.params.id)
     .populate('user', { _id: 1 })
@@ -89,9 +90,10 @@ blogsRouter.put('/:id', userExtractor, async (request, response) => {
     return response.status(204).json({ error: 'blog not found' })
   }
 
-  if (request.user !== blogToUpdate.user.id) {
+  /*if (request.user !== blogToUpdate.user.id) {
     return response.status(401).json({ error: 'user not authorized' })
-  }
+  }*/
+
   const body = request.body
   const blog = {
     title: body.title,
